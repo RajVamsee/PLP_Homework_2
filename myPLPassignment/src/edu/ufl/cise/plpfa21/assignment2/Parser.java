@@ -27,7 +27,7 @@ public class Parser implements IPLPParser {
 		}
 		
 		System.out.println(myList);
-		System.out.println("Done");
+		System.out.println("Test Case Done");
 		
 		
 		
