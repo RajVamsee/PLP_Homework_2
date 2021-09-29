@@ -8,15 +8,14 @@ public class Parser implements IPLPParser {
 
 	String s;
 	int x=0;
+	int temp=0;
 	IPLPLexer lexer;
 	ArrayList<Kind> myList=new ArrayList<Kind>();
 	IPLPToken token;
 	
-	
 	public Parser(String input) {
 		s=input;
 	}
-
 	@Override
 	public void parse() throws SyntaxException, LexicalException {
 		
@@ -41,7 +40,12 @@ public class Parser implements IPLPParser {
 			myNameDef();
 			if(myList.get(x)==Kind.ASSIGN) {
 					x+=1;
+					temp=x;
+					//Expression required
 					myExpression();
+					if(temp==x) {
+						return;
+					}
 					if(myList.get(x)==Kind.SEMI) {
 						x+=1;
 					}
@@ -55,7 +59,12 @@ public class Parser implements IPLPParser {
 			myNameDef();
 			if(myList.get(x)==Kind.ASSIGN) {
 				x+=1;
+				temp=x;
+				//Expression required
 				myExpression();
+				if(temp==x) {
+					return;
+				}
 				if(myList.get(x)==Kind.SEMI) {
 					x+=1;
 				}
@@ -144,7 +153,12 @@ public class Parser implements IPLPParser {
 			myNameDef();
 			if(myList.get(x)==Kind.ASSIGN) {
 				x+=1;
+				temp=x;
+				//Expression required
 				myExpression();
+				if(temp==x) {
+					return;
+				}
 				if(myList.get(x)==Kind.SEMI) {
 					x+=1;
 				}
@@ -155,11 +169,21 @@ public class Parser implements IPLPParser {
 		}
 		else if(myList.get(x)==Kind.KW_SWITCH) {
 			x+=1;
+			temp=x;
+			//Expression required
 			myExpression();
+			if(temp==x) {
+				return;
+			}
 			if(myList.get(x)==Kind.KW_CASE) {
 				while(myList.get(x)==Kind.KW_CASE) {
 					x+=1;
+					temp=x;
+					//Expression required
 					myExpression();
+					if(temp==x) {
+						return;
+					}
 					if(myList.get(x)==Kind.COLON) {
 						x+=1;
 					}
@@ -183,7 +207,12 @@ public class Parser implements IPLPParser {
 		}
 		else if(myList.get(x)==Kind.KW_IF){
 			x+=1;
+			temp=x;
+			//Expression required
 			myExpression();
+			if(temp==x) {
+				return;
+			}
 			if(myList.get(x)==Kind.KW_DO) {
 				x+=1;
 				myBlock();
@@ -194,7 +223,12 @@ public class Parser implements IPLPParser {
 		}
 		else if(myList.get(x)==Kind.KW_WHILE) {
 			x+=1;
+			temp=x;
+			//Expression required
 			myExpression();
+			if(temp==x) {
+				return;
+			}
 			if(myList.get(x)==Kind.KW_DO) {
 				x+=1;
 				myBlock();
@@ -205,13 +239,28 @@ public class Parser implements IPLPParser {
 		}
 		else if(myList.get(x)==Kind.KW_RETURN) {
 			x+=1;
+			temp=x;
+			//Expression required
 			myExpression();
+			if(temp==x) {
+				return;
+			}
 		}
 		else {
+			temp=x;
+			//Expression required
 			myExpression();
+			if(temp==x) {
+				return;
+			}
 			if(myList.get(x)==Kind.ASSIGN) {
 				x+=1;
+				temp=x;
+				//Expression required
 				myExpression();
+				if(temp==x) {
+					return;
+				}
 				if(myList.get(x)==Kind.SEMI) {
 					x+=1;
 				}
@@ -268,7 +317,12 @@ public class Parser implements IPLPParser {
 		}
 		else if(myList.get(x)==Kind.LPAREN) {
 			x+=1;
+			temp=x;
+			//Expression required
 			myExpression();
+			if(temp==x) {
+				return;
+			}
 			if(myList.get(x)==Kind.RPAREN) {
 				x+=1;
 			}
@@ -281,10 +335,20 @@ public class Parser implements IPLPParser {
 					x+=1;
 				}
 				else {
+					temp=x;
+					//Expression required
 					myExpression();
+					if(temp==x) {
+						return;
+					}
 					while(myList.get(x)==Kind.COMMA) {
 						x+=1;
+						temp=x;
+						//Expression required
 						myExpression();
+						if(temp==x) {
+							return;
+						}
 					}
 					if(myList.get(x)==Kind.RPAREN) {
 						x+=1;
@@ -293,7 +357,12 @@ public class Parser implements IPLPParser {
 			}
 			else if(myList.get(x)==Kind.LSQUARE) {
 				x+=1;
+				temp=x;
+				//Expression required
 				myExpression();
+				if(temp==x) {
+					return;
+				}
 				if(myList.get(x)==Kind.RSQUARE) {
 					x+=1;
 				}
