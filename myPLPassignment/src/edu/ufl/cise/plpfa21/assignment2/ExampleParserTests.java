@@ -85,13 +85,40 @@ class ExampleParserTests {
 		@Test public void test5()  {
 		String input = """
 		FUN func() DO
-		WHILE x>0 DO x=x-1; END
+		WHILE x>0 DO x=x-1 END
 		END
 		""";
 		syntaxErrorParse(input,2,19);
 		}
+		
+		@Test public void test6()  {
 
+			String input = """
+					VAR a=;
+			""";
 
-	
+			syntaxErrorParse(input,1,6);
 
+			}
+		
+		@Test public void test7()  {
+
+			String input = """
+					VAL =;
+			""";
+
+			syntaxErrorParse(input,1,4);
+
+			}
+		
+		@Test public void test8()  {
+
+			String input = """
+					VAR a=7;
+			""";
+			noErrorParse(input);
+
+			}
+		
+		
 }
