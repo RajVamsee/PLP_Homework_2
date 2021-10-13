@@ -1,7 +1,8 @@
 package edu.ufl.cise.plpfa21.assignment2;
 import java.util.ArrayList;
-import edu.ufl.cise.plpfa21.assignment3.ast.IASTNode;
-import edu.ufl.cise.plpfa21.assignment3.ast.IDeclaration;
+
+import edu.ufl.cise.plpfa21.assignment3.ast.*;
+import edu.ufl.cise.plpfa21.assignment3.ast.IType.TypeKind;
 import edu.ufl.cise.plpfa21.assignment3.astimpl.*;
 
 import edu.ufl.cise.plpfa21.assignment1.*;
@@ -36,6 +37,8 @@ public class Parser implements IPLPParser {
 		myLineList.add(token.getLine());
 		myPositionList.add(token.getCharPositionInLine());
 		myNameList.add(token.getText());
+		//myStringValues.add(token.getStringValue());
+		//myIntValues.add(token.getIntValue());
 		
 		
 		while(token.getKind()!=Kind.EOF){
@@ -44,91 +47,112 @@ public class Parser implements IPLPParser {
 			myLineList.add(token.getLine());
 			myPositionList.add(token.getCharPositionInLine());
 			myNameList.add(token.getText());
+			//myStringValues.add(token.getStringValue());
+			//myIntValues.add(token.getIntValue());
 		}
-		
-		myDeclarationList.add(myDeclaration());
+		ArrayList<IDeclaration> myDec=myDeclaration();
 		if(myList.get(x)!=Kind.EOF) {
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
-		return new Program__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),myDeclarationList);
+		return new Program__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),myDec);
 	}
 	
-	public IDeclaration myDeclaration() throws SyntaxException {
+	public  ArrayList<IDeclaration> myDeclaration() throws SyntaxException {
 		if(myList.get(x)==Kind.KW_VAR) {
-			x+=1;
-			temp=x;
-			//NameDef Required
-			myNameDef();
-			if(temp==x) {
-				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
-			}
-			if(myList.get(x)==Kind.ASSIGN) {
-					x+=1;
-					temp=x;
-					//Expression required
-					myExpression();
-					if(temp==x) {
-						throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
-					}
-					if(myList.get(x)==Kind.SEMI) {
-						x+=1;
-					}
-					else {	
-						throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
-					}
-			}
-			else if(myList.get(x)==Kind.SEMI){
-				x+=1;
-			}
-			else {
-				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
-			}
+			myDeclarationList.add(myVar());
 		}
 		else if(myList.get(x)==Kind.KW_VAL) {
-			x+=1;
+			myDeclarationList.add(myVal());
+			
+		}
+		else if(myList.get(x)==Kind.KW_FUN){
 			temp=x;
-			//NameDef Required
-			myNameDef();
+			myDeclarationList.add(myFunction());
 			if(temp==x) {
-				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
+				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x)); 
 			}
-			if(myList.get(x)==Kind.ASSIGN) {
+		}
+		else {
+			return null;
+		}
+		//return (IDeclaration) new Declaration__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x));
+		return myDeclarationList;
+	}
+	
+	public IMutableGlobal myVar() throws SyntaxException{
+		x+=1;
+		temp=x;
+		IExpression node2=null;
+		//NameDef Required
+		INameDef node1=myNameDef();
+		if(temp==x) {
+			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
+		}
+		if(myList.get(x)==Kind.ASSIGN) {
 				x+=1;
 				temp=x;
 				//Expression required
-				myExpression();
+				node2=myExpression();
 				if(temp==x) {
 					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 				}
 				if(myList.get(x)==Kind.SEMI) {
 					x+=1;
 				}
-				else {		
+				else {	
 					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 				}
-			}
-			else {
+		}
+		else if(myList.get(x)==Kind.SEMI){
+			x+=1;
+		}
+		else {
+			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
+		}
+		return new MutableGlobal__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),node1,node2);
+		//return null;
+	}
+	
+	public IImmutableGlobal myVal() throws SyntaxException{
+		x+=1;
+		temp=x;
+		INameDef node3=null;
+		IExpression node4=null;
+		//NameDef Required
+		node3=myNameDef();
+		if(temp==x) {
+			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
+		}
+		if(myList.get(x)==Kind.ASSIGN) {
+			x+=1;
+			temp=x;
+			//Expression required
+			node4=myExpression();
+			if(temp==x) {
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
-		}
-		else if(myList.get(x)==Kind.KW_FUN){
-			
-			temp=x;
-			myFunction();
-			if(temp==x) {
+			if(myList.get(x)==Kind.SEMI) {
+				x+=1;
+			}
+			else {		
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
 		}
 		else {
-			return null;
+			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
-		return null;
+		return new ImmutableGlobal__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),node3,node4);
 	}
 	
-	public void myFunction() throws SyntaxException {
+	public IFunctionDeclaration myFunction() throws SyntaxException {
+		IIdentifier name=null;
+		ArrayList<INameDef> nameDefList=new ArrayList<INameDef>();
+		IType resultType=null;
+		IBlock block=null;
 		if(myList.get(x)==Kind.KW_FUN) {
 			x+=1;
 			if(myList.get(x)==Kind.IDENTIFIER) {
+				name=new Identifier__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),String.valueOf(myNameList.get(x)));
 				x+=1;
 				if(myList.get(x)==Kind.LPAREN) {
 					x+=1;
@@ -138,7 +162,7 @@ public class Parser implements IPLPParser {
 					else{
 						temp=x;
 						//NameDef Required
-						myNameDef();
+						nameDefList.add(myNameDef());
 						if(temp==x) {
 							throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 						}
@@ -146,7 +170,7 @@ public class Parser implements IPLPParser {
 							x+=1;
 							temp=x;
 							//NameDef Required
-							myNameDef();
+							nameDefList.add(myNameDef());
 							if(temp==x) {
 								throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 							}
@@ -162,7 +186,7 @@ public class Parser implements IPLPParser {
 						x+=1;
 						temp=x;
 						//Type needed
-						myType();
+						resultType=myType();
 						if(temp==x) {							
 							throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 						}
@@ -170,7 +194,7 @@ public class Parser implements IPLPParser {
 							x+=1;
 							temp=x;
 							//Block needed
-							myBlock();
+							block=myBlock();
 							if(temp==x) {		
 								throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 							}
@@ -190,7 +214,7 @@ public class Parser implements IPLPParser {
 							x+=1;
 							temp=x;
 							//Block needed
-							myBlock();
+							block=myBlock();
 							if(temp==x) {	
 								throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 							}
@@ -215,26 +239,33 @@ public class Parser implements IPLPParser {
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
 		}
+		
 		else {			
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
+		return new FunctionDeclaration___((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),name,nameDefList,resultType,block);
 	}
 	
-	public void myBlock() throws SyntaxException{
-		myStatement();
+	public IBlock myBlock() throws SyntaxException{
+		ArrayList<IStatement> statementList=new ArrayList<IStatement>();
+		statementList.add(myStatement());
 		while(myList.get(x)==Kind.KW_LET||myList.get(x)==Kind.KW_SWITCH||myList.get(x)==Kind.KW_IF||myList.get(x)==Kind.KW_WHILE||myList.get(x)==Kind.KW_RETURN||myList.get(x)==Kind.KW_NIL||myList.get(x)==Kind.KW_TRUE||myList.get(x)==Kind.KW_FALSE||myList.get(x)==Kind.INT_LITERAL||myList.get(x)==Kind.STRING_LITERAL||myList.get(x)==Kind.IDENTIFIER) {
-			myStatement();
+			statementList.add(myStatement());
 		}
+		return new Block__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),statementList);
 	}
 	
-	public void myNameDef() throws SyntaxException{
+	public INameDef myNameDef() throws SyntaxException{
+		IIdentifier node5=null;
+		IType node6=null;
 		if(myList.get(x)==Kind.IDENTIFIER) {
+			node5=new Identifier__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),String.valueOf(myNameList.get(x)));
 			x+=1;
 			if(myList.get(x)==Kind.COLON) {
 				x+=1;
 				temp=x;
 				//Type needed
-				myType();
+				node6=myType();
 				if(temp==x) {		
 					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 				}
@@ -243,14 +274,18 @@ public class Parser implements IPLPParser {
 		else {	
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
+		return new NameDef__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),node5,node6);
 	}
 	
-	public void myStatement() throws SyntaxException{
+	public IStatement myStatement() throws SyntaxException{
+		IBlock block=null;
+		IExpression exp=null;
+		INameDef nameDef=null; 
 		if(myList.get(x)==Kind.KW_LET) {
 			x+=1;
 			temp=x;
 			//NameDef required
-			myNameDef();
+			nameDef=myNameDef();
 			if(temp==x) {	
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
@@ -258,7 +293,7 @@ public class Parser implements IPLPParser {
 				x+=1;
 				temp=x;
 				//Expression required
-				myExpression();
+				exp=myExpression();
 				if(temp==x) {		
 					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 				}
@@ -269,18 +304,35 @@ public class Parser implements IPLPParser {
 					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 				}
 			}
-			else if(myList.get(x)==Kind.SEMI) {
+			else if(myList.get(x)==Kind.KW_DO) {
 				x+=1;
+				temp=x;
+				//Block needed
+				block=myBlock();
+				if(temp==x) {		
+					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
+				}
+				if(myList.get(x)==Kind.KW_END) {
+					x+=1;
+				}
+				else {
+					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
+				}
 			}
 			else {
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
+			return new LetStatement__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),block,exp,nameDef);
 		}
 		else if(myList.get(x)==Kind.KW_SWITCH) {
+			IExpression switchExpression=null;
+			ArrayList<IExpression> branchExpression=new ArrayList<IExpression>();
+			ArrayList<IBlock> blockList=new ArrayList<IBlock>();
+			IBlock defaultBlock=null;
 			x+=1;
 			temp=x;
 			//Expression required
-			myExpression();
+			switchExpression=myExpression();
 			if(temp==x) {		
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
@@ -289,7 +341,7 @@ public class Parser implements IPLPParser {
 					x+=1;
 					temp=x;
 					//Expression required
-					myExpression();
+					branchExpression.add(myExpression());
 					if(temp==x) {
 						throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 					}
@@ -297,7 +349,7 @@ public class Parser implements IPLPParser {
 						x+=1;
 						//Block needed
 						temp=x;
-						myBlock();
+						blockList.add(myBlock());
 						if(temp==x) {	
 							throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 						}
@@ -310,7 +362,7 @@ public class Parser implements IPLPParser {
 					x+=1;
 					temp=x;
 					//Block needed
-					myBlock();
+					defaultBlock=myBlock();
 					if(temp==x) {			
 						throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 					}
@@ -329,7 +381,7 @@ public class Parser implements IPLPParser {
 				x+=1;
 				temp=x;
 				//Block needed
-				myBlock();
+				defaultBlock=myBlock();
 				if(temp==x) {	
 					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 				}
@@ -343,12 +395,15 @@ public class Parser implements IPLPParser {
 			else {			
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
+			return new SwitchStatement__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),switchExpression,branchExpression,blockList,defaultBlock);
 		}
 		else if(myList.get(x)==Kind.KW_IF){
 			x+=1;
 			temp=x;
+			IExpression ex=null;
+			IBlock blockNode=null;
 			//Expression required
-			myExpression();
+			ex=myExpression();
 			if(temp==x) {	
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
@@ -356,7 +411,7 @@ public class Parser implements IPLPParser {
 				x+=1;
 				temp=x;
 				//Block needed
-				//IBlock blocknode = myBlock();
+				blockNode = myBlock();
 				if(temp==x) {
 					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 				}
@@ -370,12 +425,15 @@ public class Parser implements IPLPParser {
 			else {
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
+			return new IfStatement__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),ex,blockNode);
 		}
 		else if(myList.get(x)==Kind.KW_WHILE) {
+			IExpression ie=null;
+			IBlock ib=null;
 			x+=1;
 			temp=x;
 			//Expression required
-			myExpression();
+			ie=myExpression();
 			if(temp==x) {
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
@@ -383,7 +441,7 @@ public class Parser implements IPLPParser {
 				x+=1;
 				temp=x;
 				//Block needed
-				myBlock();
+				ib=myBlock();
 				if(temp==x) {		
 					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 				}
@@ -397,12 +455,14 @@ public class Parser implements IPLPParser {
 			else {
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
+			return new WhileStatement__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),ie,ib);
 		}
 		else if(myList.get(x)==Kind.KW_RETURN) {
+			IExpression myExp=null;
 			x+=1;
 			temp=x;
 			//Expression required
-			myExpression();
+			myExp=myExpression();
 			if(temp==x) {
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
@@ -412,11 +472,14 @@ public class Parser implements IPLPParser {
 			else {
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
+			return new ReturnStatement__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),myExp);
 		}
 		else {
 			temp=x;
+			IExpression l=null;
+			IExpression r=null;
 			//Expression required
-			myExpression();
+			l=myExpression();
 			if(temp==x) {
 				
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
@@ -425,7 +488,7 @@ public class Parser implements IPLPParser {
 				x+=1;
 				temp=x;
 				//Expression required
-				myExpression();
+				r=myExpression();
 				if(temp==x) {
 					
 					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
@@ -445,111 +508,147 @@ public class Parser implements IPLPParser {
 				
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
+			return new AssignmentStatement__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),l,r);
 		}
 	}
 	
-	public void myExpression() throws SyntaxException{
+	public IExpression myExpression() throws SyntaxException{
 		temp=x;
-		myLogicalExpression();
+		IBinaryExpression node=myLogicalExpression();
 		if(temp==x) {
-			
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
+		return node;
 	}
 	
-	public void myLogicalExpression() throws SyntaxException {
+	public IBinaryExpression myLogicalExpression() throws SyntaxException {
 		temp=x;
-		myComparisonExpression();
+		IExpression right=null;
+		Kind myLocalKind=null;
+		IExpression left=myComparisonExpression();
 		if(temp==x) {
 			
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
 		while(myList.get(x)==Kind.AND||myList.get(x)==Kind.OR) {
+			myLocalKind=(Kind)myList.get(x);
 			x+=1;
 			temp=x;
-			myComparisonExpression();
-			if(temp==x) {
-				
+			right=myComparisonExpression();
+			if(temp==x) {		
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
 		}
+		return new BinaryExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),left,right,myLocalKind);
 	}
 	
-	public void myComparisonExpression() throws SyntaxException{
+	public IBinaryExpression myComparisonExpression() throws SyntaxException{
 		temp=x;
-		myAdditiveExpression();
+		IExpression left=myAdditiveExpression();
+		IExpression right=null;
+		Kind myLocalKind=null;
 		if(temp==x) {
 			
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
 		while(myList.get(x)==Kind.GT||myList.get(x)==Kind.LT||myList.get(x)==Kind.EQUALS||myList.get(x)==Kind.NOT_EQUALS) {
+			myLocalKind=(Kind)myList.get(x);
 			x+=1;
 			temp=x;
-			myAdditiveExpression();
+			right=myAdditiveExpression();
 			if(temp==x) {
 				
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
 		}
+		return new BinaryExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),left,right,myLocalKind);
 	}
 	
-	public void myAdditiveExpression() throws SyntaxException{
+	public IBinaryExpression myAdditiveExpression() throws SyntaxException{
 		temp=x;
-		myMultiplicativeExpression();
+		IExpression left=myMultiplicativeExpression();
+		IExpression right=null;
+		Kind myLocalKind=null;
 		if(temp==x) {
 			
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
 		while(myList.get(x)==Kind.PLUS||myList.get(x)==Kind.MINUS) {
+			myLocalKind=(Kind)myList.get(x);
 			x+=1;
 			temp=x;
-			myMultiplicativeExpression();
+			right=myMultiplicativeExpression();
 			if(temp==x) {
 				
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
 		}
+		return new BinaryExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),left,right,myLocalKind);
 	}
 	
-	public void myMultiplicativeExpression() throws SyntaxException{
+	public IBinaryExpression myMultiplicativeExpression() throws SyntaxException{
 		temp=x;
-		myUnaryExpression();
+		IExpression left=myUnaryExpression();
+		IExpression right=null;
+		Kind myLocalKind=null;
 		if(temp==x) {
 			
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
 		while(myList.get(x)==Kind.DIV||myList.get(x)==Kind.TIMES) {
+			myLocalKind=(Kind)myList.get(x);
 			x+=1;
 			temp=x;
-			myUnaryExpression();
+			right=myUnaryExpression();
 			if(temp==x) {
 				
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
 		}
+		return new BinaryExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),left,right,myLocalKind);
 	}
 	
-	public void myUnaryExpression() throws SyntaxException {
+	public IUnaryExpression myUnaryExpression() throws SyntaxException {
 		if(myList.get(x)==Kind.BANG||myList.get(x)==Kind.MINUS) {
 			x+=1;
 		}
 		temp=x;
-		myPrimaryExpression();
+		IExpression node1=myPrimaryExpression();
 		if(temp==x) {
 			
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
+		return new UnaryExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),node1,(Kind)myList.get(x));
 	}
 	
-	public void myPrimaryExpression() throws SyntaxException{
+	public IExpression myPrimaryExpression() throws SyntaxException{
 		if(myList.get(x)==Kind.KW_NIL||myList.get(x)==Kind.KW_TRUE||myList.get(x)==Kind.KW_FALSE||myList.get(x)==Kind.INT_LITERAL||myList.get(x)==Kind.STRING_LITERAL) {
 			x+=1;
+			if(myList.get(x)==Kind.KW_NIL) {
+				return new NilConstantExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)));
+			}
+			if(myList.get(x)==Kind.KW_TRUE) {
+				boolean value=true;
+				return new BooleanLiteralExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),value);
+			}
+			if(myList.get(x)==Kind.KW_FALSE) {
+				boolean value=false;
+				return new BooleanLiteralExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),value);
+			}
+			if(myList.get(x)==Kind.INT_LITERAL) {
+				int abc=(int)myList.get(x);
+				return new IntLiteralExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),abc);
+			}
+			if(myList.get(x)==Kind.STRING_LITERAL) {
+				String def=(String)myList.get(x);
+				return new StringLiteralExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),def);
+			}
 		}
 		else if(myList.get(x)==Kind.LPAREN) {
 			x+=1;
 			temp=x;
 			//Expression required
-			myExpression();
+			IExpression node=myExpression();
 			if(temp==x) {
 				
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
@@ -558,12 +657,15 @@ public class Parser implements IPLPParser {
 				x+=1;
 			}
 			else {
-				
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
+			return node;
 		}
 		else if(myList.get(x)==Kind.IDENTIFIER) {
+			
 			x+=1;
+			ArrayList<IExpression> nodeList=new ArrayList<IExpression>();
+			IIdentifier myName=new Identifier__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),String.valueOf(myNameList.get(x)));
 			if(myList.get(x)==Kind.LPAREN) {
 				x+=1;
 				if(myList.get(x)==Kind.RPAREN) {
@@ -571,15 +673,14 @@ public class Parser implements IPLPParser {
 				}
 				else {
 					temp=x;
-					myExpression();
+					nodeList.add(myExpression());
 					if(temp!=x) {
 					while(myList.get(x)==Kind.COMMA) {
 						x+=1;
 						temp=x;
 						//Expression required
-						myExpression();
+						nodeList.add(myExpression());
 						if(temp==x) {
-							
 							throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 						}
 					}
@@ -592,12 +693,13 @@ public class Parser implements IPLPParser {
 						throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 					}
 				}
+				return new FunctionCallExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),myName,nodeList);
 			}
 			else if(myList.get(x)==Kind.LSQUARE) {
 				x+=1;
 				temp=x;
 				//Expression required
-				myExpression();
+				IExpression node=myExpression();
 				if(temp==x) {
 					
 					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
@@ -609,24 +711,32 @@ public class Parser implements IPLPParser {
 					
 					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 				}
+				return new ListSelectorExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),myName,node);
+			}
+			else {
+				return new IdentExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),myName);
 			}
 		}
 		else {
 			
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
+		return null;
 	}
 	
-	public void myType() throws SyntaxException{
+	public IType myType() throws SyntaxException{
+		IType it=null;
 		if(myList.get(x)==Kind.KW_INT) {
 			x+=1;
-			//return new PrimitiveType(,,,);
+			return new PrimitiveType__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),TypeKind.INT);
 		}
 		else if(myList.get(x)==Kind.KW_STRING) {
 			x+=1;
+			return new PrimitiveType__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),TypeKind.STRING);
 		}
 		else if(myList.get(x)==Kind.KW_BOOLEAN) {
 			x+=1;
+			return new PrimitiveType__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),TypeKind.BOOLEAN);
 		}
 		else if(myList.get(x)==Kind.KW_LIST) {
 			x+=1;
@@ -637,7 +747,7 @@ public class Parser implements IPLPParser {
 				}
 				else {
 					temp=x;
-					myType();
+					it=myType();
 					//Type needed
 					if(temp==x) {
 						
@@ -656,6 +766,7 @@ public class Parser implements IPLPParser {
 				
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
+			return new ListType__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),it);
 		}
 		else {
 			
