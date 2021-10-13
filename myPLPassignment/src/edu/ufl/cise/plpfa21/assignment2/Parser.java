@@ -1,5 +1,8 @@
 package edu.ufl.cise.plpfa21.assignment2;
 import java.util.ArrayList;
+import edu.ufl.cise.plpfa21.assignment3.ast.IASTNode;
+import edu.ufl.cise.plpfa21.assignment3.ast.IDeclaration;
+import edu.ufl.cise.plpfa21.assignment3.astimpl.*;
 
 import edu.ufl.cise.plpfa21.assignment1.*;
 import edu.ufl.cise.plpfa21.assignment1.PLPTokenKinds.Kind;
@@ -16,20 +19,23 @@ public class Parser implements IPLPParser {
 	ArrayList myLineList=new ArrayList();
 	@SuppressWarnings("rawtypes")
 	ArrayList myPositionList=new ArrayList();
+	@SuppressWarnings("rawtypes")
+	ArrayList myNameList=new ArrayList();
 	IPLPToken token;
-	
+	ArrayList<IDeclaration> myDeclarationList=new ArrayList<IDeclaration>();	
 	public Parser(String input) {
 		s=input;
 	}
 	@SuppressWarnings("unchecked")
 	@Override
-	public void parse() throws SyntaxException, LexicalException {
+	public IASTNode parse() throws SyntaxException, LexicalException {
 		
 		lexer = CompilerComponentFactory.getLexer(s);
 		token = lexer.nextToken();
 		myList.add(token.getKind());
 		myLineList.add(token.getLine());
 		myPositionList.add(token.getCharPositionInLine());
+		myNameList.add(token.getText());
 		
 		
 		while(token.getKind()!=Kind.EOF){
@@ -37,15 +43,17 @@ public class Parser implements IPLPParser {
 			myList.add(token.getKind());
 			myLineList.add(token.getLine());
 			myPositionList.add(token.getCharPositionInLine());
+			myNameList.add(token.getText());
 		}
 		
-		myDeclaration();
+		myDeclarationList.add(myDeclaration());
 		if(myList.get(x)!=Kind.EOF) {
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
+		return new Program__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),myDeclarationList);
 	}
 	
-	public void myDeclaration() throws SyntaxException {
+	public IDeclaration myDeclaration() throws SyntaxException {
 		if(myList.get(x)==Kind.KW_VAR) {
 			x+=1;
 			temp=x;
@@ -104,6 +112,7 @@ public class Parser implements IPLPParser {
 			}
 		}
 		else if(myList.get(x)==Kind.KW_FUN){
+			
 			temp=x;
 			myFunction();
 			if(temp==x) {
@@ -111,8 +120,9 @@ public class Parser implements IPLPParser {
 			}
 		}
 		else {
-			return;
+			return null;
 		}
+		return null;
 	}
 	
 	public void myFunction() throws SyntaxException {
@@ -346,7 +356,7 @@ public class Parser implements IPLPParser {
 				x+=1;
 				temp=x;
 				//Block needed
-				myBlock();
+				//IBlock blocknode = myBlock();
 				if(temp==x) {
 					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 				}
@@ -610,6 +620,7 @@ public class Parser implements IPLPParser {
 	public void myType() throws SyntaxException{
 		if(myList.get(x)==Kind.KW_INT) {
 			x+=1;
+			//return new PrimitiveType(,,,);
 		}
 		else if(myList.get(x)==Kind.KW_STRING) {
 			x+=1;

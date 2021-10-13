@@ -1,7 +1,8 @@
 package edu.ufl.cise.plpfa21.assignment2;
+import edu.ufl.cise.plpfa21.assignment3.ast.IASTNode;
 
 public interface IPLPParser {
 
-	void parse() throws Exception;
+	IASTNode parse() throws Exception;
 		
 }
