@@ -22,13 +22,17 @@ public class Parser implements IPLPParser {
 	ArrayList myPositionList=new ArrayList();
 	@SuppressWarnings("rawtypes")
 	ArrayList myNameList=new ArrayList();
+	@SuppressWarnings("rawtypes")
+	ArrayList myIntValues=new ArrayList();
+	@SuppressWarnings("rawtypes")
+	ArrayList myStringValues=new ArrayList();
 	IPLPToken token;
 	ArrayList<IDeclaration> myDeclarationList=new ArrayList<IDeclaration>();	
 	public Parser(String input) {
 		s=input;
 	}
+	
 	@SuppressWarnings("unchecked")
-	@Override
 	public IASTNode parse() throws SyntaxException, LexicalException {
 		
 		lexer = CompilerComponentFactory.getLexer(s);
@@ -37,9 +41,18 @@ public class Parser implements IPLPParser {
 		myLineList.add(token.getLine());
 		myPositionList.add(token.getCharPositionInLine());
 		myNameList.add(token.getText());
-		//myStringValues.add(token.getStringValue());
-		//myIntValues.add(token.getIntValue());
-		
+		if(token.getKind()==Kind.INT_LITERAL||token.getKind()==Kind.STRING_LITERAL) {
+			if(token.getKind()==Kind.INT_LITERAL) {
+				myIntValues.add(token.getIntValue());
+			}
+			else {
+				myStringValues.add(token.getStringValue());
+			}
+		}
+		else {
+			myIntValues.add(null);
+			myStringValues.add(null);
+		}
 		
 		while(token.getKind()!=Kind.EOF){
 			token = lexer.nextToken();
@@ -47,8 +60,18 @@ public class Parser implements IPLPParser {
 			myLineList.add(token.getLine());
 			myPositionList.add(token.getCharPositionInLine());
 			myNameList.add(token.getText());
-			//myStringValues.add(token.getStringValue());
-			//myIntValues.add(token.getIntValue());
+			if(token.getKind()==Kind.INT_LITERAL||token.getKind()==Kind.STRING_LITERAL) {
+				if(token.getKind()==Kind.INT_LITERAL) {
+					myIntValues.add(token.getIntValue());
+				}
+				else {
+					myStringValues.add(token.getStringValue());
+				}
+			}
+			else {
+				myIntValues.add(null);
+				myStringValues.add(null);
+			}
 		}
 		ArrayList<IDeclaration> myDec=myDeclaration();
 		if(myList.get(x)!=Kind.EOF) {
@@ -61,19 +84,16 @@ public class Parser implements IPLPParser {
 		if(myList.get(x)==Kind.KW_VAR) {
 			myDeclarationList.add(myVar());
 		}
-		else if(myList.get(x)==Kind.KW_VAL) {
+		if(myList.get(x)==Kind.KW_VAL) {
 			myDeclarationList.add(myVal());
 			
 		}
-		else if(myList.get(x)==Kind.KW_FUN){
+		if(myList.get(x)==Kind.KW_FUN){
 			temp=x;
 			myDeclarationList.add(myFunction());
 			if(temp==x) {
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x)); 
 			}
-		}
-		else {
-			return null;
 		}
 		//return (IDeclaration) new Declaration__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x));
 		return myDeclarationList;
@@ -93,6 +113,7 @@ public class Parser implements IPLPParser {
 				temp=x;
 				//Expression required
 				node2=myExpression();
+				//System.out.println(node2);
 				if(temp==x) {
 					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 				}
@@ -128,6 +149,7 @@ public class Parser implements IPLPParser {
 			temp=x;
 			//Expression required
 			node4=myExpression();
+			//System.out.println(node4);
 			if(temp==x) {
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
@@ -294,6 +316,7 @@ public class Parser implements IPLPParser {
 				temp=x;
 				//Expression required
 				exp=myExpression();
+				//System.out.println(exp);
 				if(temp==x) {		
 					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 				}
@@ -333,6 +356,7 @@ public class Parser implements IPLPParser {
 			temp=x;
 			//Expression required
 			switchExpression=myExpression();
+			//System.out.println(switchExpression);
 			if(temp==x) {		
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
@@ -358,6 +382,7 @@ public class Parser implements IPLPParser {
 						throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 					}
 				}
+				//System.out.println(branchExpression);
 				if(myList.get(x)==Kind.KW_DEFAULT) {
 					x+=1;
 					temp=x;
@@ -404,6 +429,7 @@ public class Parser implements IPLPParser {
 			IBlock blockNode=null;
 			//Expression required
 			ex=myExpression();
+			//System.out.println(ex);
 			if(temp==x) {	
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
@@ -434,6 +460,7 @@ public class Parser implements IPLPParser {
 			temp=x;
 			//Expression required
 			ie=myExpression();
+			//System.out.println(ie);
 			if(temp==x) {
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
@@ -463,6 +490,7 @@ public class Parser implements IPLPParser {
 			temp=x;
 			//Expression required
 			myExp=myExpression();
+			//System.out.println(myExp);
 			if(temp==x) {
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
@@ -480,6 +508,7 @@ public class Parser implements IPLPParser {
 			IExpression r=null;
 			//Expression required
 			l=myExpression();
+			//System.out.println(l);
 			if(temp==x) {
 				
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
@@ -489,6 +518,7 @@ public class Parser implements IPLPParser {
 				temp=x;
 				//Expression required
 				r=myExpression();
+				//System.out.println(r);
 				if(temp==x) {
 					
 					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
@@ -513,15 +543,18 @@ public class Parser implements IPLPParser {
 	}
 	
 	public IExpression myExpression() throws SyntaxException{
+		System.out.println(myList.get(x));
 		temp=x;
-		IBinaryExpression node=myLogicalExpression();
+		IExpression node=myLogicalExpression();
 		if(temp==x) {
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
+		System.out.println(myList.get(x));
 		return node;
 	}
 	
-	public IBinaryExpression myLogicalExpression() throws SyntaxException {
+	public IExpression myLogicalExpression() throws SyntaxException {
+		System.out.println(myList.get(x));
 		temp=x;
 		IExpression right=null;
 		Kind myLocalKind=null;
@@ -530,19 +563,25 @@ public class Parser implements IPLPParser {
 			
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
-		while(myList.get(x)==Kind.AND||myList.get(x)==Kind.OR) {
-			myLocalKind=(Kind)myList.get(x);
-			x+=1;
-			temp=x;
-			right=myComparisonExpression();
-			if(temp==x) {		
-				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
+		if(myList.get(x)==Kind.AND||myList.get(x)==Kind.OR) {
+			while(myList.get(x)==Kind.AND||myList.get(x)==Kind.OR) {
+				myLocalKind=(Kind)myList.get(x);
+				x+=1;
+				temp=x;
+				right=myComparisonExpression();
+				if(temp==x) {		
+					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
+				}
 			}
+			System.out.println(myList.get(x));
+			return new BinaryExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),left,right,myLocalKind);
 		}
-		return new BinaryExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),left,right,myLocalKind);
+		System.out.println(myList.get(x));
+		return left;
 	}
 	
-	public IBinaryExpression myComparisonExpression() throws SyntaxException{
+	public IExpression myComparisonExpression() throws SyntaxException{
+		System.out.println(myList.get(x));
 		temp=x;
 		IExpression left=myAdditiveExpression();
 		IExpression right=null;
@@ -551,20 +590,26 @@ public class Parser implements IPLPParser {
 			
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
-		while(myList.get(x)==Kind.GT||myList.get(x)==Kind.LT||myList.get(x)==Kind.EQUALS||myList.get(x)==Kind.NOT_EQUALS) {
-			myLocalKind=(Kind)myList.get(x);
-			x+=1;
-			temp=x;
-			right=myAdditiveExpression();
-			if(temp==x) {
-				
-				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
+		if(myList.get(x)==Kind.GT||myList.get(x)==Kind.LT||myList.get(x)==Kind.EQUALS||myList.get(x)==Kind.NOT_EQUALS) {
+			while(myList.get(x)==Kind.GT||myList.get(x)==Kind.LT||myList.get(x)==Kind.EQUALS||myList.get(x)==Kind.NOT_EQUALS) {
+				myLocalKind=(Kind)myList.get(x);
+				x+=1;
+				temp=x;
+				right=myAdditiveExpression();
+				if(temp==x) {
+					
+					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
+				}
 			}
+			System.out.println(myList.get(x));
+			return new BinaryExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),left,right,myLocalKind);
 		}
-		return new BinaryExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),left,right,myLocalKind);
+		System.out.println(myList.get(x));
+		return left;
 	}
 	
-	public IBinaryExpression myAdditiveExpression() throws SyntaxException{
+	public IExpression myAdditiveExpression() throws SyntaxException{
+		System.out.println(myList.get(x));
 		temp=x;
 		IExpression left=myMultiplicativeExpression();
 		IExpression right=null;
@@ -573,20 +618,26 @@ public class Parser implements IPLPParser {
 			
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
-		while(myList.get(x)==Kind.PLUS||myList.get(x)==Kind.MINUS) {
-			myLocalKind=(Kind)myList.get(x);
-			x+=1;
-			temp=x;
-			right=myMultiplicativeExpression();
-			if(temp==x) {
-				
-				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
+		if(myList.get(x)==Kind.PLUS||myList.get(x)==Kind.MINUS) {
+			while(myList.get(x)==Kind.PLUS||myList.get(x)==Kind.MINUS) {
+				myLocalKind=(Kind)myList.get(x);
+				x+=1;
+				temp=x;
+				right=myMultiplicativeExpression();
+				if(temp==x) {
+					
+					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
+				}
 			}
+			System.out.println(myList.get(x));
+			return new BinaryExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),left,right,myLocalKind);
 		}
-		return new BinaryExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),left,right,myLocalKind);
+		System.out.println(myList.get(x));
+		return left;
 	}
 	
-	public IBinaryExpression myMultiplicativeExpression() throws SyntaxException{
+	public IExpression myMultiplicativeExpression() throws SyntaxException{
+		System.out.println(myList.get(x));
 		temp=x;
 		IExpression left=myUnaryExpression();
 		IExpression right=null;
@@ -595,53 +646,71 @@ public class Parser implements IPLPParser {
 			
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
-		while(myList.get(x)==Kind.DIV||myList.get(x)==Kind.TIMES) {
-			myLocalKind=(Kind)myList.get(x);
-			x+=1;
-			temp=x;
-			right=myUnaryExpression();
-			if(temp==x) {
-				
-				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
+		if(myList.get(x)==Kind.DIV||myList.get(x)==Kind.TIMES){
+			while(myList.get(x)==Kind.DIV||myList.get(x)==Kind.TIMES) {
+				myLocalKind=(Kind)myList.get(x);
+				x+=1;
+				temp=x;
+				right=myUnaryExpression();
+				if(temp==x) {
+					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
+				}
 			}
+			System.out.println(left+" "+right);
+			return new BinaryExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),left,right,myLocalKind);
 		}
-		return new BinaryExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),left,right,myLocalKind);
+		System.out.println(left);
+		return left;
 	}
 	
-	public IUnaryExpression myUnaryExpression() throws SyntaxException {
+	public IExpression myUnaryExpression() throws SyntaxException {
+		System.out.println(myList.get(x));
+		IExpression node1=null;
 		if(myList.get(x)==Kind.BANG||myList.get(x)==Kind.MINUS) {
 			x+=1;
+			node1=myPrimaryExpression();
+			System.out.println(node1);
+			return new UnaryExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),node1,(Kind)myList.get(x));
 		}
 		temp=x;
-		IExpression node1=myPrimaryExpression();
+		node1=myPrimaryExpression();
 		if(temp==x) {
 			
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
-		return new UnaryExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),node1,(Kind)myList.get(x));
+		System.out.println(node1);
+		return node1;
 	}
 	
-	public IExpression myPrimaryExpression() throws SyntaxException{
+	public IExpression myPrimaryExpression() throws SyntaxException {
+		System.out.println(myList.get(x));
 		if(myList.get(x)==Kind.KW_NIL||myList.get(x)==Kind.KW_TRUE||myList.get(x)==Kind.KW_FALSE||myList.get(x)==Kind.INT_LITERAL||myList.get(x)==Kind.STRING_LITERAL) {
-			x+=1;
 			if(myList.get(x)==Kind.KW_NIL) {
-				return new NilConstantExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)));
+				x+=1;
+				System.out.println(myList.get(x));
+				return new NilConstantExpression__((Integer)myLineList.get(x-1),(Integer)myPositionList.get(x-1),String.valueOf(myNameList.get(x-1)));
 			}
 			if(myList.get(x)==Kind.KW_TRUE) {
+				x+=1;
 				boolean value=true;
-				return new BooleanLiteralExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),value);
+				System.out.println(myList.get(x));
+				return new BooleanLiteralExpression__((Integer)myLineList.get(x-1),(Integer)myPositionList.get(x-1),String.valueOf(myNameList.get(x-1)),value);
 			}
 			if(myList.get(x)==Kind.KW_FALSE) {
+				x+=1;
 				boolean value=false;
-				return new BooleanLiteralExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),value);
+				System.out.println(myList.get(x));
+				return new BooleanLiteralExpression__((Integer)myLineList.get(x-1),(Integer)myPositionList.get(x-1),String.valueOf(myNameList.get(x-1)),value);
 			}
 			if(myList.get(x)==Kind.INT_LITERAL) {
-				int abc=(int)myList.get(x);
-				return new IntLiteralExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),abc);
+				x+=1;
+				System.out.println(myList.get(x));
+				return new IntLiteralExpression__((Integer)myLineList.get(x-1),(Integer)myPositionList.get(x-1),String.valueOf(myNameList.get(x-1)),(int)myIntValues.get(x-1));
 			}
 			if(myList.get(x)==Kind.STRING_LITERAL) {
-				String def=(String)myList.get(x);
-				return new StringLiteralExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),def);
+				x+=1;
+				System.out.println(myList.get(x));
+				return new StringLiteralExpression__((Integer)myLineList.get(x-1),(Integer)myPositionList.get(x-1),String.valueOf(myNameList.get(x-1)),(String)myStringValues.get(x-1));
 			}
 		}
 		else if(myList.get(x)==Kind.LPAREN) {
@@ -659,13 +728,14 @@ public class Parser implements IPLPParser {
 			else {
 				throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 			}
+			System.out.println(myList.get(x));
 			return node;
 		}
 		else if(myList.get(x)==Kind.IDENTIFIER) {
 			
 			x+=1;
 			ArrayList<IExpression> nodeList=new ArrayList<IExpression>();
-			IIdentifier myName=new Identifier__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),String.valueOf(myNameList.get(x)));
+			IIdentifier myName=new Identifier__((Integer)myLineList.get(x-1),(Integer)myPositionList.get(x-1),String.valueOf(myNameList.get(x-1)),String.valueOf(myNameList.get(x-1)));
 			if(myList.get(x)==Kind.LPAREN) {
 				x+=1;
 				if(myList.get(x)==Kind.RPAREN) {
@@ -693,6 +763,7 @@ public class Parser implements IPLPParser {
 						throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 					}
 				}
+				System.out.println(myList.get(x));
 				return new FunctionCallExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),myName,nodeList);
 			}
 			else if(myList.get(x)==Kind.LSQUARE) {
@@ -711,16 +782,18 @@ public class Parser implements IPLPParser {
 					
 					throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 				}
+				System.out.println(myList.get(x));
 				return new ListSelectorExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),myName,node);
 			}
 			else {
+				System.out.println(myList.get(x));
 				return new IdentExpression__((Integer)myLineList.get(x),(Integer)myPositionList.get(x),String.valueOf(myNameList.get(x)),myName);
 			}
 		}
 		else {
-			
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}
+		System.out.println(myList.get(x));
 		return null;
 	}
 	
