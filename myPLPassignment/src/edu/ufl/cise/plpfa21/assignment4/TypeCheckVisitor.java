@@ -136,8 +136,12 @@ public class TypeCheckVisitor implements ASTVisitor {
 
 	@Override
 	public Object visitIIfStatement(IIfStatement n, Object arg) throws Exception {
-		//TODO
-		throw new UnsupportedOperationException("IMPLEMENT ME!");
+		IExpression guard = n.getGuardExpression();
+		IType guardType = (IType) guard.visit(this, arg);
+		check(guardType.isBoolean(), n, "Guard expression type not boolean");
+		IBlock block = n.getBlock();
+		block.visit(this, arg);
+		return arg;
 	}
 
 	@Override
@@ -318,12 +322,20 @@ public class TypeCheckVisitor implements ASTVisitor {
 	 */
 	@Override
 	public Object visitIWhileStatement(IWhileStatement n, Object arg) throws Exception {
+		//System.out.println("In While Function");
 		IExpression guard = n.getGuardExpression();
+		//System.out.println("n: "+n);
+		//System.out.println("arg: "+arg);
+		//System.out.println("guard: "+guard);
 		IType guardType = (IType) guard.visit(this, arg);
+		//System.out.println("guardType: "+guardType);
 		check(guardType.isBoolean(), n, "Guard expression type not boolean");
+		//System.out.println("trueFalse "+guardType.isBoolean());
 		IBlock block = n.getBlock();
+		//System.out.println("block "+block);
 		block.visit(this, arg);
-		return arg;
+		//System.out.println("visit "+block.visit(this, arg));
+		return arg;  
 	}
 
 	@Override
