@@ -61,7 +61,32 @@ public class TypeCheckVisitor implements ASTVisitor {
 	@Override
 	public Object visitIBinaryExpression(IBinaryExpression n, Object arg) throws Exception {
 		//TODO
-		throw new UnsupportedOperationException("IMPLEMENT ME!");
+		//throw new UnsupportedOperationException("IMPLEMENT ME!");
+		Kind myOp=n.getOp();
+		IType leftType=(IType)n.getLeft().visit(this, arg);
+		IType rightType=(IType)n.getRight().visit(this, arg);
+		
+		if(compatibleAssignmentTypes(leftType,rightType)) {
+			if(myOp==Kind.LT||myOp==Kind.GT||myOp==Kind.EQUALS||myOp==Kind.NOT_EQUALS) {
+				n.setType(PrimitiveType__.booleanType);
+			}
+			else if((myOp==Kind.MINUS||myOp==Kind.DIV||myOp==Kind.TIMES)&&(leftType.isInt())){
+				n.setType(PrimitiveType__.intType); 
+			}
+			else if((myOp==Kind.PLUS)&&(leftType.isInt()||leftType.isString()||leftType.isList())) {
+				n.setType(leftType);
+			}
+			else if((myOp==Kind.AND||myOp==Kind.OR)&&(leftType.isBoolean())) {
+				n.setType(PrimitiveType__.booleanType);
+			} 
+			else {
+				check(false,n,"Illegal operator or expression type in binary expression");
+			}
+		}
+		else {
+			check(false,n,"Illegal operator or expression type in binary expression");
+		}
+		return n.getType();
 	}
 
 	/**
@@ -78,8 +103,9 @@ public class TypeCheckVisitor implements ASTVisitor {
 
 	@Override
 	public Object visitIBooleanLiteralExpression(IBooleanLiteralExpression n, Object arg) throws Exception {
-		//TODO
-		throw new UnsupportedOperationException("IMPLEMENT ME!");
+		IType type = PrimitiveType__.booleanType;
+		n.setType(type);
+		return type; 
 	}
 
 	@Override
@@ -158,7 +184,7 @@ public class TypeCheckVisitor implements ASTVisitor {
 	@Override
 	public Object visitIIntLiteralExpression(IIntLiteralExpression n, Object arg) throws Exception {
 		IType type = PrimitiveType__.intType;
-		n.setType(type);
+		n.setType(type); 
 		return type;
 	}
 
