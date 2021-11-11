@@ -194,8 +194,9 @@ public class TypeCheckVisitor implements ASTVisitor {
 	public Object visitILetStatement(ILetStatement n, Object arg) throws Exception {
 		IExpression expression=n.getExpression();
 		IType expressionType = (IType) expression.visit(this, arg);
-		symtab.enterScope();
 		INameDef nameDef=n.getLocalDef();
+		symtab.insert(nameDef.getIdent().getName(),nameDef);
+		symtab.enterScope();
 		IType declaredType = (IType) nameDef.visit(this, n);
 		IType inferredType = unifyAndCheck(declaredType, expressionType, n);
 		nameDef.setType(inferredType);
