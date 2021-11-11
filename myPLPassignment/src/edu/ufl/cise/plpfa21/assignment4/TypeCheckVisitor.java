@@ -70,11 +70,11 @@ public class TypeCheckVisitor implements ASTVisitor {
 			if(myOp==Kind.LT||myOp==Kind.GT||myOp==Kind.EQUALS||myOp==Kind.NOT_EQUALS) {
 				n.setType(PrimitiveType__.booleanType);
 			}
-			else if((myOp==Kind.MINUS||myOp==Kind.DIV||myOp==Kind.TIMES)&&(leftType.isInt())){
-				n.setType(PrimitiveType__.intType); 
-			}
 			else if((myOp==Kind.PLUS)&&(leftType.isInt()||leftType.isString()||leftType.isList())) {
 				n.setType(leftType);
+			}
+			else if((myOp==Kind.MINUS||myOp==Kind.DIV||myOp==Kind.TIMES)&&(leftType.isInt())){
+				n.setType(PrimitiveType__.intType); 
 			}
 			else if((myOp==Kind.AND||myOp==Kind.OR)&&(leftType.isBoolean())) {
 				n.setType(PrimitiveType__.booleanType);
@@ -186,15 +186,23 @@ public class TypeCheckVisitor implements ASTVisitor {
 		IType type = PrimitiveType__.intType;
 		n.setType(type); 
 		return type;
-	}
-
+	} 
 	/**
 	 * arg is enclosing Function declaration
 	 */
 	@Override
 	public Object visitILetStatement(ILetStatement n, Object arg) throws Exception {
-		//TODO
-		throw new UnsupportedOperationException("IMPLEMENT ME!");
+		IExpression expression=n.getExpression();
+		IType expressionType = (IType) expression.visit(this, arg);
+		symtab.enterScope();
+		INameDef nameDef=n.getLocalDef();
+		IType declaredType = (IType) nameDef.visit(this, n);
+		IType inferredType = unifyAndCheck(declaredType, expressionType, n);
+		nameDef.setType(inferredType);
+		IBlock block = n.getBlock();
+		block.visit(this, arg);
+		symtab.leaveScope();
+		return arg;
 	}
 
 	@Override
@@ -277,8 +285,12 @@ public class TypeCheckVisitor implements ASTVisitor {
 	 */
 	@Override
 	public Object visitIReturnStatement(IReturnStatement n, Object arg) throws Exception {
-		//TODO
-		throw new UnsupportedOperationException("IMPLEMENT ME!");
+		//TODO 
+		IExpression expression=n.getExpression();
+		IType expressionType = (IType) expression.visit(this, arg);
+		IFunctionDeclaration ftype=(IFunctionDeclaration)arg;
+		check(compatibleAssignmentTypes(expressionType,ftype.getResultType()),n,"Incompatible types");
+		return arg; 
 	}
 
 	@Override
