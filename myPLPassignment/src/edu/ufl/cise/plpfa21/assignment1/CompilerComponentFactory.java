@@ -1,6 +1,7 @@
 package edu.ufl.cise.plpfa21.assignment1;
 import edu.ufl.cise.plpfa21.assignment2.*;
 import edu.ufl.cise.plpfa21.assignment3.ast.ASTVisitor;
+import edu.ufl.cise.plpfa21.assignment4.TypeCheckVisitor;
 import edu.ufl.cise.plpfa21.assignment5.StarterCodeGenVisitor;
 
 public class CompilerComponentFactory {
@@ -17,7 +18,7 @@ public class CompilerComponentFactory {
 	
 	public static ASTVisitor getTypeCheckVisitor() {
 		// Replace this with whatever is needed for your compiler
-		return new ReferenceTypeCheckVisitor(); 
+		return new TypeCheckVisitor();
 	}
 	
 	public static ASTVisitor getCodeGenVisitor(String className, String packageName, String sourceFileName) {
