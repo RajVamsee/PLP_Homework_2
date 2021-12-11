@@ -42,9 +42,9 @@ import edu.ufl.cise.plpfa21.assignment3.ast.IType;
 import edu.ufl.cise.plpfa21.assignment3.ast.IUnaryExpression;
 import edu.ufl.cise.plpfa21.assignment3.ast.IWhileStatement;
 import edu.ufl.cise.plpfa21.assignment3.astimpl.Type__;
-import edu.ufl.cise.plpfa21.assignment5.ReferenceCodeGenVisitor.LocalVarInfo;
-import edu.ufl.cise.plpfa21.assignment5.ReferenceCodeGenVisitor.MethodVisitorLocalVarTable;
-import edu.ufl.cise.plpfa21.pLP.ListSelectorExpression;
+//import edu.ufl.cise.plpfa21.assignment5.ReferenceCodeGenVisitor.LocalVarInfo;
+//import edu.ufl.cise.plpfa21.assignment5.ReferenceCodeGenVisitor.MethodVisitorLocalVarTable;
+//import edu.ufl.cise.plpfa21.pLP.ListSelectorExpression;
 
 
 public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
