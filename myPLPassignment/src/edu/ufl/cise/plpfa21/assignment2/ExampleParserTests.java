@@ -51,9 +51,11 @@ class ExampleParserTests {
 	
 
 		@Test public void test1() {
-		String input = """
-		VAL a: INT = 0;
-		""";
+			String input = """
+					VAR a: INT = 2+4;
+						VAR b: INT = a-1;
+
+					""";
 		noErrorParse(input);
 		}
 

@@ -1,42 +1,12 @@
 package edu.ufl.cise.plpfa21.assignment4;
 
-import java.util.List;
-
 import edu.ufl.cise.plpfa21.assignment1.PLPTokenKinds.Kind;
-import edu.ufl.cise.plpfa21.assignment3.ast.ASTVisitor;
-import edu.ufl.cise.plpfa21.assignment3.ast.IASTNode;
-import edu.ufl.cise.plpfa21.assignment3.ast.IAssignmentStatement;
-import edu.ufl.cise.plpfa21.assignment3.ast.IBinaryExpression;
-import edu.ufl.cise.plpfa21.assignment3.ast.IBlock;
-import edu.ufl.cise.plpfa21.assignment3.ast.IBooleanLiteralExpression;
-import edu.ufl.cise.plpfa21.assignment3.ast.IDeclaration;
-import edu.ufl.cise.plpfa21.assignment3.ast.IExpression;
-import edu.ufl.cise.plpfa21.assignment3.ast.IFunctionCallExpression;
-import edu.ufl.cise.plpfa21.assignment3.ast.IFunctionDeclaration;
-import edu.ufl.cise.plpfa21.assignment3.ast.IIdentExpression;
-import edu.ufl.cise.plpfa21.assignment3.ast.IIdentifier;
-import edu.ufl.cise.plpfa21.assignment3.ast.IIfStatement;
-import edu.ufl.cise.plpfa21.assignment3.ast.IImmutableGlobal;
-import edu.ufl.cise.plpfa21.assignment3.ast.IIntLiteralExpression;
-import edu.ufl.cise.plpfa21.assignment3.ast.ILetStatement;
-import edu.ufl.cise.plpfa21.assignment3.ast.IListSelectorExpression;
-import edu.ufl.cise.plpfa21.assignment3.ast.IListType;
-import edu.ufl.cise.plpfa21.assignment3.ast.IMutableGlobal;
-import edu.ufl.cise.plpfa21.assignment3.ast.INameDef;
-import edu.ufl.cise.plpfa21.assignment3.ast.INilConstantExpression;
-import edu.ufl.cise.plpfa21.assignment3.ast.IPrimitiveType;
-import edu.ufl.cise.plpfa21.assignment3.ast.IProgram;
-import edu.ufl.cise.plpfa21.assignment3.ast.IReturnStatement;
-import edu.ufl.cise.plpfa21.assignment3.ast.IStatement;
-import edu.ufl.cise.plpfa21.assignment3.ast.IStringLiteralExpression;
-import edu.ufl.cise.plpfa21.assignment3.ast.ISwitchStatement;
-import edu.ufl.cise.plpfa21.assignment3.ast.IType;
-import edu.ufl.cise.plpfa21.assignment3.ast.IType.TypeKind;
-import edu.ufl.cise.plpfa21.assignment3.ast.IUnaryExpression;
-import edu.ufl.cise.plpfa21.assignment3.ast.IWhileStatement;
+import edu.ufl.cise.plpfa21.assignment3.ast.*;
 import edu.ufl.cise.plpfa21.assignment3.astimpl.ListType__;
 import edu.ufl.cise.plpfa21.assignment3.astimpl.PrimitiveType__;
 import edu.ufl.cise.plpfa21.assignment3.astimpl.Type__;
+
+import java.util.List;
 
 public class TypeCheckVisitor implements ASTVisitor {
 
@@ -58,33 +28,41 @@ public class TypeCheckVisitor implements ASTVisitor {
 		}
 	}
 
+	public Object visitIExpressionStatement(IExpressionStatement n, Object arg)throws Exception{
+		return null;
+	}
+
 	@Override
 	public Object visitIBinaryExpression(IBinaryExpression n, Object arg) throws Exception {
-		//TODO
-		//throw new UnsupportedOperationException("IMPLEMENT ME!");
-		Kind myOp=n.getOp();
-		IType leftType=(IType)n.getLeft().visit(this, arg);
-		IType rightType=(IType)n.getRight().visit(this, arg);
-		
-		if(compatibleAssignmentTypes(leftType,rightType)) {
-			if(myOp==Kind.LT||myOp==Kind.GT||myOp==Kind.EQUALS||myOp==Kind.NOT_EQUALS) {
-				n.setType(PrimitiveType__.booleanType);
-			}
-			else if((myOp==Kind.PLUS)&&(leftType.isInt()||leftType.isString()||leftType.isList())) {
-				n.setType(leftType);
-			}
-			else if((myOp==Kind.MINUS||myOp==Kind.DIV||myOp==Kind.TIMES)&&(leftType.isInt())){
-				n.setType(PrimitiveType__.intType); 
-			}
-			else if((myOp==Kind.AND||myOp==Kind.OR)&&(leftType.isBoolean())) {
-				n.setType(PrimitiveType__.booleanType);
-			} 
-			else {
-				check(false,n,"Illegal operator or expression type in binary expression");
+		IExpression left = n.getLeft();
+		IExpression right = n.getRight();
+		IType l = (IType) left.visit(this,arg);
+		IType r = (IType) right.visit(this,arg);
+		Kind op = n.getOp();
+
+		if(op.equals(Kind.EQUALS)||op.equals(Kind.NOT_EQUALS)||op.equals(Kind.LT)||op.equals(Kind.GT)){
+			n.setType(PrimitiveType__.booleanType);
+		}
+		else if(op.equals(Kind.PLUS)){
+			if (l.isInt()&&r.isInt()) n.setType(PrimitiveType__.intType);
+			if (l.isString()&&r.isString())n.setType(PrimitiveType__.stringType);
+			if (l.isList()&&r.isList()) {
+				IListType lie = (IListType) left.getType();
+				IType lelementType = lie.getElementType();
+				IType linferredElemType = lelementType != null ? (IType) lelementType.visit(this, null) : Type__.undefinedType;
+
+				IListType rie = (IListType) left.getType();
+				IType relementType = rie.getElementType();
+				IType rinferredElemType = relementType != null ? (IType) relementType.visit(this, null) : Type__.undefinedType;
+
+				if(linferredElemType==rinferredElemType) n.setType(linferredElemType);
 			}
 		}
-		else {
-			check(false,n,"Illegal operator or expression type in binary expression");
+		else if(op.equals(Kind.MINUS)||op.equals(Kind.TIMES)||op.equals(Kind.DIV)){
+			if (l.isInt()==r.isInt()) n.setType(PrimitiveType__.intType);
+		}
+		else if(op.equals(Kind.AND)||op.equals(Kind.OR)){
+			if (l.isBoolean()==r.isBoolean()) n.setType(PrimitiveType__.booleanType);
 		}
 		return n.getType();
 	}
@@ -105,7 +83,7 @@ public class TypeCheckVisitor implements ASTVisitor {
 	public Object visitIBooleanLiteralExpression(IBooleanLiteralExpression n, Object arg) throws Exception {
 		IType type = PrimitiveType__.booleanType;
 		n.setType(type);
-		return type; 
+		return type;
 	}
 
 	@Override
@@ -184,24 +162,23 @@ public class TypeCheckVisitor implements ASTVisitor {
 	@Override
 	public Object visitIIntLiteralExpression(IIntLiteralExpression n, Object arg) throws Exception {
 		IType type = PrimitiveType__.intType;
-		n.setType(type); 
+		n.setType(type);
 		return type;
-	} 
+	}
+
 	/**
 	 * arg is enclosing Function declaration
 	 */
 	@Override
 	public Object visitILetStatement(ILetStatement n, Object arg) throws Exception {
-		IExpression expression=n.getExpression();
-		IType expressionType = (IType) expression.visit(this, arg);
-		INameDef nameDef=n.getLocalDef();
-		symtab.insert(nameDef.getIdent().getName(),nameDef);
+		IExpression e=n.getExpression();
+		IType expressionType = (IType) e.visit(this,arg);
 		symtab.enterScope();
-		IType declaredType = (IType) nameDef.visit(this, n);
-		IType inferredType = unifyAndCheck(declaredType, expressionType, n);
-		nameDef.setType(inferredType);
-		IBlock block = n.getBlock();
-		block.visit(this, arg);
+		INameDef nd = n.getLocalDef();
+		IType dec = (IType) nd.visit(this,arg);
+		IType inf = unifyAndCheck(dec,expressionType,n);
+		nd.setType(inf);
+		n.getBlock().visit(this,arg);
 		symtab.leaveScope();
 		return arg;
 	}
@@ -286,12 +263,11 @@ public class TypeCheckVisitor implements ASTVisitor {
 	 */
 	@Override
 	public Object visitIReturnStatement(IReturnStatement n, Object arg) throws Exception {
-		//TODO 
-		IExpression expression=n.getExpression();
-		IType expressionType = (IType) expression.visit(this, arg);
-		IFunctionDeclaration ftype=(IFunctionDeclaration)arg;
-		check(compatibleAssignmentTypes(expressionType,ftype.getResultType()),n,"Incompatible types");
-		return arg; 
+		IExpression e = n.getExpression();
+		IType nd = (IType) e.visit(this,arg);
+		IType dec = ((IFunctionDeclaration) arg).getResultType();
+		check(compatibleAssignmentTypes(dec,nd),n,"NOT Compatible");
+		return arg;
 	}
 
 	@Override
@@ -328,8 +304,18 @@ public class TypeCheckVisitor implements ASTVisitor {
 	 */
 	@Override
 	public Object visitISwitchStatement(ISwitchStatement n, Object arg) throws Exception {
-		//TODO
-		throw new UnsupportedOperationException("IMPLEMENT ME!");
+		IExpression switchExpression = n.getSwitchExpression();
+		if (switchExpression.getType().isBoolean()||switchExpression.getType().isInt()||switchExpression.getType().isString()){
+			List<IExpression> branchExpressions = n.getBranchExpressions();
+			List<IBlock> blocks=n.getBlocks();
+			for(int i=0;i<branchExpressions.size();i++){
+
+				check(compatibleAssignmentTypes((IType) branchExpressions.get(i).visit(this,arg),(IType) switchExpression.visit(this,arg))&&isConstantExpression(branchExpressions.get(i)),n,"NOT valid switch statement");
+				blocks.get(i).visit(this,arg);
+			}
+			n.getDefaultBlock().visit(this,arg);
+		}
+		return arg;
 	}
 
 	@Override
@@ -348,7 +334,11 @@ public class TypeCheckVisitor implements ASTVisitor {
 			IListType listType = (IListType) eType;
 			IType elementType = listType.getElementType();
 			n.setType(elementType);
-		} else {
+		}
+		else if(op==null){
+			n.setType(eType);
+		}
+		else {
 			// not a legal case
 			check(false, n, "Illegal operator or expression type in unary expression");
 		}
@@ -361,20 +351,12 @@ public class TypeCheckVisitor implements ASTVisitor {
 	 */
 	@Override
 	public Object visitIWhileStatement(IWhileStatement n, Object arg) throws Exception {
-		//System.out.println("In While Function");
 		IExpression guard = n.getGuardExpression();
-		//System.out.println("n: "+n);
-		//System.out.println("arg: "+arg);
-		//System.out.println("guard: "+guard);
 		IType guardType = (IType) guard.visit(this, arg);
-		//System.out.println("guardType: "+guardType);
 		check(guardType.isBoolean(), n, "Guard expression type not boolean");
-		//System.out.println("trueFalse "+guardType.isBoolean());
 		IBlock block = n.getBlock();
-		//System.out.println("block "+block);
 		block.visit(this, arg);
-		//System.out.println("visit "+block.visit(this, arg));
-		return arg;  
+		return arg;
 	}
 
 	@Override
