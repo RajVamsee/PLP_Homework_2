@@ -73,7 +73,9 @@ public class Parser implements IPLPParser {
 				myStringValues.add(null);
 			}
 		}
-		ArrayList<IDeclaration> myDec=myDeclaration();
+		ArrayList<IDeclaration> myDec=null;
+		while(myList.get(x)!=Kind.EOF) myDec=myDeclaration();
+		
 		if(myList.get(x)!=Kind.EOF) {
 			throw new SyntaxException(s,(Integer)myLineList.get(x),(Integer)myPositionList.get(x));
 		}

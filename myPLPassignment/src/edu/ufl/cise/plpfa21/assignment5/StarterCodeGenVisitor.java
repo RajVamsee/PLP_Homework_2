@@ -3,6 +3,7 @@ package edu.ufl.cise.plpfa21.assignment5;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
@@ -95,7 +96,56 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitIBinaryExpression(IBinaryExpression n, Object arg) throws Exception {
-		throw new UnsupportedOperationException("TO IMPLEMENT");
+		//throw new UnsupportedOperationException("TO IMPLEMENT");
+		 IExpression r = n.getRight();
+	     IExpression l = n.getLeft();
+	     Kind myOp = n.getOp();
+	     MethodVisitor mv = ((MethodVisitorLocalVarTable) arg).mv();
+	     r.visit(this, arg);
+	     l.visit(this, arg);
+	     IType right = n.getRight().getType();
+	     IType left = n.getLeft().getType();
+	     switch (myOp) {
+	         case PLUS -> {
+	            if (right.isInt()&&left.isInt()) {
+	               mv.visitMethodInsn(INVOKESTATIC, runtimeClass,myOp.toString().toLowerCase(Locale.ROOT), "(II)I", false);
+	            }
+	            else if (right.isString()&&left.isString()) {
+	               mv.visitMethodInsn(INVOKESTATIC, runtimeClass, "plus_string", "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;", false);
+	            } else { //argument is List
+	               throw new UnsupportedOperationException("SKIP THIS");
+	            }
+	         }
+	         case MINUS, TIMES, DIV -> {
+		            if (right.isInt()&&left.isInt()) {
+		               mv.visitMethodInsn(INVOKESTATIC, runtimeClass, myOp.toString().toLowerCase(Locale.ROOT), "(II)I", false);
+		            } else { //argument is List
+		               throw new UnsupportedOperationException("SKIP THIS");
+		            }
+		         } 
+	         case EQUALS, NOT_EQUALS, LT, GT -> { 
+		            if (right.isInt()&&left.isInt()) {
+		               mv.visitMethodInsn(INVOKESTATIC, runtimeClass, myOp.toString().toLowerCase(Locale.ROOT), "(II)Z", false);
+		            }
+		            else if (right.isString() && left.isString()) {
+		               mv.visitMethodInsn(INVOKESTATIC, runtimeClass, myOp.toString().toLowerCase(Locale.ROOT), "(Ljava/lang/String;Ljava/lang/String;)Z", false);
+		            }
+		            else if (right.isBoolean()&&left.isBoolean()) {
+		               mv.visitMethodInsn(INVOKESTATIC, runtimeClass, myOp.toString().toLowerCase(Locale.ROOT), "(ZZ)Z", false);
+		            } else { //argument is List
+		               throw new UnsupportedOperationException("SKIP THIS"); 
+		            }
+		         }
+	         case AND, OR -> {
+	            if (right.isBoolean()&&left.isBoolean()) {
+	               mv.visitMethodInsn(INVOKESTATIC, runtimeClass, myOp.toString().toLowerCase(Locale.ROOT), "(ZZ)Z", false);
+	            } else { //argument is List
+	               throw new UnsupportedOperationException("SKIP THIS");
+	            }
+	         }
+	         default -> throw new UnsupportedOperationException("compilation error");
+	      }
+	      return null;
 	}
 
 
@@ -175,22 +225,66 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitIFunctionCallExpression(IFunctionCallExpression n, Object arg) throws Exception {
-		throw new UnsupportedOperationException("TO IMPLEMENT");
+		//throw new UnsupportedOperationException("TO IMPLEMENT");
+		StringBuilder mybuilder = new StringBuilder();
+	    mybuilder.append("(");
+	    IFunctionDeclaration dec = (IFunctionDeclaration)n.getName().getDec();
+	    MethodVisitor localvisitor = ((MethodVisitorLocalVarTable) arg).mv(); 
+	    n.getName().visit(this,arg);
+	    List<IExpression> l = n.getArgs();
+	    for (IExpression e : l){
+	        if (e!=null){
+	           e.visit(this,arg);
+	           mybuilder.append(e.getType().isBoolean() ? "Z" : e.getType().isInt() ? "I": e.getType().isString() ? stringDesc:"V");
+	        }
+	     }  
+	    mybuilder.append(")");
+	    mybuilder.append(dec.getResultType().isBoolean() ? "Z" : dec.getResultType().isInt() ? "I": dec.getResultType().isString() ? stringDesc:"V");
+	    localvisitor.visitMethodInsn(INVOKESTATIC,className,n.getName().getName(),mybuilder.toString(),false);     
+		return null;
 	}
 
 	@Override
 	public Object visitIIdentExpression(IIdentExpression n, Object arg) throws Exception {
-		throw new UnsupportedOperationException("TO IMPLEMENT");
+		//throw new UnsupportedOperationException("TO IMPLEMENT");
+		IDeclaration myDec= n.getName().getDec();
+		MethodVisitor myVisitor= ((MethodVisitorLocalVarTable)arg).mv;
+		if(myDec instanceof IMutableGlobal||myDec instanceof IImmutableGlobal){ 
+	         myVisitor.visitFieldInsn(GETSTATIC,className,n.getName().getName(),n.getType().isBoolean() ? "Z" : n.getType().isInt() ? "I": stringDesc);
+	     }
+		else { 
+			INameDef vd = (INameDef)n.getName().getDec();
+	        if (n.getType().isInt()||n.getType().isBoolean()) { 
+	        	myVisitor.visitVarInsn(ILOAD,vd.getIdent().getSlot());
+	        }
+	        else {
+	        	myVisitor.visitVarInsn(ALOAD,vd.getIdent().getSlot());
+	        }
+		}  
+		return null;
 	}
 
 	@Override
 	public Object visitIIdentifier(IIdentifier n, Object arg) throws Exception {
-		throw new UnsupportedOperationException("TO IMPLEMENT");
+		//throw new UnsupportedOperationException("TO IMPLEMENT");
+		return null;
 	}
 
 	@Override
 	public Object visitIIfStatement(IIfStatement n, Object arg) throws Exception {
-		throw new UnsupportedOperationException("TO IMPLEMENT");
+		//throw new UnsupportedOperationException("TO IMPLEMENT");
+		MethodVisitor visitor = ((MethodVisitorLocalVarTable)arg).mv;
+	    Label l1 = new Label();
+	    Label l2 = new Label();
+	    Label myexit = new Label();
+	    IExpression expression = n.getGuardExpression();
+	    expression.visit(this, arg); 
+	    visitor.visitJumpInsn(IFEQ,myexit);
+	    visitor.visitLabel(l1);
+	    n.getBlock().visit(this, arg);
+	    visitor.visitLabel(l2); 
+	    visitor.visitLabel(myexit);
+	    return null;
 	}
 
 	@Override
@@ -210,14 +304,31 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitIIntLiteralExpression(IIntLiteralExpression n, Object arg) throws Exception {
-		MethodVisitor mv = ((MethodVisitorLocalVarTable)arg).mv;
-		mv.visitLdcInsn(n.getValue());
+		((MethodVisitorLocalVarTable)arg).mv.visitLdcInsn(n.getValue());
 		return null;
-	}
+	} 
 
 	@Override
 	public Object visitILetStatement(ILetStatement n, Object arg) throws Exception {
-		throw new UnsupportedOperationException("TO IMPLEMENT");
+		//throw new UnsupportedOperationException("TO IMPLEMENT");
+		INameDef vd = n.getLocalDef();
+	    IExpression expression = n.getExpression();
+	    MethodVisitor mv = ((MethodVisitorLocalVarTable) arg).mv;
+	    vd.visit(this, arg);
+	    if (expression!= null)
+	     {
+	        expression.visit(this, arg);
+	         if(expression.getType().isString())
+	         {
+	        	 mv.visitVarInsn(ASTORE,vd.getIdent().getSlot()); 
+	             
+	         }
+	         else if(expression.getType().isBoolean()||expression.getType().isInt()) {
+	        	 mv.visitVarInsn(ISTORE,vd.getIdent().getSlot());
+	         }
+	      }
+	    n.getBlock().visit(this, arg);
+		return null; 
 	}
 		
 
@@ -234,7 +345,22 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitINameDef(INameDef n, Object arg) throws Exception {
-		throw new UnsupportedOperationException();
+		//throw new UnsupportedOperationException();
+		List<LocalVarInfo> myList = ((MethodVisitorLocalVarTable) arg).localVars;
+		MethodVisitor mv = ((MethodVisitorLocalVarTable) arg).mv;
+		String vdesc = n.getType().getDesc();
+		String vname = n.getIdent().getName();
+	      if (!(n.getIdent().getDec() instanceof IImmutableGlobal && n.getIdent().getDec() instanceof IMutableGlobal)) {
+	         n.getIdent().setSlot(myList.size());
+	         myList.add(new LocalVarInfo(vname,vdesc,null,null));
+	         Label l1 = new Label();
+	         mv.visitLabel(l1);
+	         MethodVisitorLocalVarTable context = new MethodVisitorLocalVarTable(mv,myList);
+	         Label l2 = new Label();
+	         mv.visitLabel(l2);
+	         addLocals(context,l1,l2);
+	      }
+	      return null;
 	}
 
 	@Override
@@ -311,7 +437,9 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitIStringLiteralExpression(IStringLiteralExpression n, Object arg) throws Exception {
-		throw new UnsupportedOperationException("TO IMPLEMENT");
+		//throw new UnsupportedOperationException("TO IMPLEMENT");
+	    ((MethodVisitorLocalVarTable) arg).mv.visitLdcInsn(n.getValue());
+	    return null; 
 	}
 
 	@Override
@@ -328,7 +456,6 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 		n.getExpression().visit(this, arg);
 		//get the operator and types of operand and result
 		Kind op = n.getOp();
-		IType resultType = n.getType();
 		IType operandType = n.getExpression().getType();
 		switch(op) {
 		case MINUS -> {
@@ -358,30 +485,85 @@ public class StarterCodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitIWhileStatement(IWhileStatement n, Object arg) throws Exception {
-		throw new UnsupportedOperationException("TO IMPLEMENT");
+		//throw new UnsupportedOperationException("TO IMPLEMENT");
+		MethodVisitor visit = ((MethodVisitorLocalVarTable)arg).mv;
+	    IExpression exp = n.getGuardExpression();
+	    Label exitlabel = new Label();
+	    Label while_startlabel = new Label();
+	    Label while_endlabel = new Label();
+	    Label startlabel = new Label();
+	    visit.visitLabel(startlabel);
+	    exp.visit(this, arg);
+	    visit.visitJumpInsn(IFEQ,exitlabel);
+	    visit.visitLabel(while_startlabel);
+	    n.getBlock().visit(this, arg); 
+	    visit.visitLabel(while_endlabel);
+	    visit.visitJumpInsn(GOTO,startlabel);
+	    visit.visitLabel(exitlabel); 
+	    return null; 
 	}
 
 
 	@Override
 	public Object visitIMutableGlobal(IMutableGlobal n, Object arg) throws Exception {
-		throw new UnsupportedOperationException("TO IMPLEMENT");
+		//throw new UnsupportedOperationException("TO IMPLEMENT");
+		MethodVisitor mv = ((MethodVisitorLocalVarTable) arg).mv;
+	      INameDef nameDef = n.getVarDef();
+	      String varName = nameDef.getIdent().getName();
+	      String typeDesc = nameDef.getType().getDesc();
+	      FieldVisitor fieldVisitor = cw.visitField(ACC_PUBLIC | ACC_STATIC , varName, typeDesc, null, null);
+	      fieldVisitor.visitEnd();
+	      //generate code to initialize field.
+	      IExpression e = n.getExpression();
+	      if (e!=null) {
+	         e.visit(this, arg);  //generate code to leave value of expression on top of stack
+	         mv.visitFieldInsn(PUTSTATIC, className, varName, typeDesc);
+	      }
+	      return null;
 	}
 
 	@Override
 	public Object visitIPrimitiveType(IPrimitiveType n, Object arg) throws Exception {
 		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException();
+		//throw new UnsupportedOperationException();
+		return n;
 	}
 
 
 	@Override
 	public Object visitIAssignmentStatement(IAssignmentStatement n, Object arg) throws Exception {
-		throw new UnsupportedOperationException("TO IMPLEMENT");
+		//throw new UnsupportedOperationException("TO IMPLEMENT");
+	     MethodVisitor mv = ((MethodVisitorLocalVarTable) arg).mv;
+	     if (!(n.getLeft()instanceof IFunctionCallExpression)&&n.getRight()!=null) {
+	         n.getRight().visit(this, arg);
+	         IIdentifier ident = ((IIdentExpression) n.getLeft()).getName();
+	         IDeclaration dec = ident.getDec(); 
+	         if (dec instanceof IImmutableGlobal) {
+	        	 mv.visitFieldInsn(PUTSTATIC, className, ident.getName(), ((IImmutableGlobal) dec).getVarDef().getType().getDesc());
+	         } 
+	         else if(dec instanceof IMutableGlobal) { 
+	        	 mv.visitFieldInsn(PUTSTATIC, className, ident.getName(), ((IMutableGlobal) dec).getVarDef().getType().getDesc());  
+	         } 
+	         else if (dec instanceof INameDef) {
+	            if(n.getLeft().getType().isInt()||n.getLeft().getType().isBoolean())
+	            {
+	               mv.visitVarInsn(ISTORE,((INameDef)dec).getIdent().getSlot());
+	            } else 
+	            {
+	               mv.visitVarInsn(ASTORE,((INameDef)dec).getIdent().getSlot());
+	            }
+	         }
+	      }else if (n.getLeft() instanceof IFunctionCallExpression&&n.getRight() == null) {
+	    	  n.getLeft().visit(this, arg);
+	      }
+	     
+	     return null;
 
 	}
 
 	@Override
 	public Object visitIExpressionStatement(IExpressionStatement n, Object arg) throws Exception {
-		throw new UnsupportedOperationException("TO IMPLEMENT");
+		//throw new UnsupportedOperationException("TO IMPLEMENT");
+		return null;
 	}
 }

@@ -34,35 +34,49 @@ public class TypeCheckVisitor implements ASTVisitor {
 
 	@Override
 	public Object visitIBinaryExpression(IBinaryExpression n, Object arg) throws Exception {
-		IExpression left = n.getLeft();
-		IExpression right = n.getRight();
-		IType l = (IType) left.visit(this,arg);
-		IType r = (IType) right.visit(this,arg);
-		Kind op = n.getOp();
+		Kind myop = n.getOp();
+		IExpression myright = n.getRight();
+		IType right = (IType) myright.visit(this,arg);
+		IExpression myleft = n.getLeft();
+		IType left = (IType) myleft.visit(this,arg);
 
-		if(op.equals(Kind.EQUALS)||op.equals(Kind.NOT_EQUALS)||op.equals(Kind.LT)||op.equals(Kind.GT)){
+		if(myop.equals(Kind.LT)||myop.equals(Kind.GT)||myop.equals(Kind.EQUALS)||myop.equals(Kind.NOT_EQUALS)){
 			n.setType(PrimitiveType__.booleanType);
 		}
-		else if(op.equals(Kind.PLUS)){
-			if (l.isInt()&&r.isInt()) n.setType(PrimitiveType__.intType);
-			if (l.isString()&&r.isString())n.setType(PrimitiveType__.stringType);
-			if (l.isList()&&r.isList()) {
-				IListType lie = (IListType) left.getType();
-				IType lelementType = lie.getElementType();
-				IType linferredElemType = lelementType != null ? (IType) lelementType.visit(this, null) : Type__.undefinedType;
-
-				IListType rie = (IListType) left.getType();
-				IType relementType = rie.getElementType();
-				IType rinferredElemType = relementType != null ? (IType) relementType.visit(this, null) : Type__.undefinedType;
-
-				if(linferredElemType==rinferredElemType) n.setType(linferredElemType);
+		else if(myop.equals(Kind.PLUS)){
+			if (left.isInt() && right.isString())
+				{
+				n.setType(PrimitiveType__.stringType);
+				}
+			if (left.isString() && right.isInt())
+				{
+				n.setType(PrimitiveType__.intType); 
+				}
+			if (right.isList() && left.isList()) {
+				
+				IListType l = (IListType)myleft.getType();
+				IType linfer = l.getElementType() != null ? (IType) l.getElementType().visit(this, null) : Type__.undefinedType;
+				
+				IListType r = (IListType) myleft.getType();
+				IType rinfer = r.getElementType() != null ? (IType) r.getElementType().visit(this, null) : Type__.undefinedType;
+				
+				if(linfer==rinfer)
+					{
+					n.setType(linfer);  
+					}
 			}
 		}
-		else if(op.equals(Kind.MINUS)||op.equals(Kind.TIMES)||op.equals(Kind.DIV)){
-			if (l.isInt()==r.isInt()) n.setType(PrimitiveType__.intType);
+		else if(myop.equals(Kind.AND)||myop.equals(Kind.OR)){
+			if (left.isBoolean()==right.isBoolean())
+				{
+				n.setType(PrimitiveType__.booleanType);
+				}
 		}
-		else if(op.equals(Kind.AND)||op.equals(Kind.OR)){
-			if (l.isBoolean()==r.isBoolean()) n.setType(PrimitiveType__.booleanType);
+		else if(myop.equals(Kind.TIMES)||myop.equals(Kind.DIV)||myop.equals(Kind.MINUS)){
+			if (left.isInt()==right.isInt())
+				{
+				n.setType(PrimitiveType__.intType);
+				}
 		}
 		return n.getType();
 	}
@@ -81,9 +95,9 @@ public class TypeCheckVisitor implements ASTVisitor {
 
 	@Override
 	public Object visitIBooleanLiteralExpression(IBooleanLiteralExpression n, Object arg) throws Exception {
-		IType type = PrimitiveType__.booleanType;
-		n.setType(type);
-		return type;
+		IType mytype = PrimitiveType__.booleanType;
+		n.setType(mytype);
+		return mytype; 
 	}
 
 	@Override
@@ -140,15 +154,15 @@ public class TypeCheckVisitor implements ASTVisitor {
 
 	@Override
 	public Object visitIIfStatement(IIfStatement n, Object arg) throws Exception {
-		IExpression guard = n.getGuardExpression();
-		IType guardType = (IType) guard.visit(this, arg);
-		check(guardType.isBoolean(), n, "Guard expression type not boolean");
-		IBlock block = n.getBlock();
-		block.visit(this, arg);
+		IExpression myguard = n.getGuardExpression();
+		IType myguardType = (IType)myguard.visit(this, arg);
+		check(myguardType.isBoolean(), n, "Guard expression type not boolean");
+		IBlock myblock = n.getBlock();
+		myblock.visit(this, arg);
 		return arg;
 	}
 
-	@Override
+	@Override 
 	public Object visitIImmutableGlobal(IImmutableGlobal n, Object arg) throws Exception {
 		IExpression expression = n.getExpression(); // IIMutableGlobal must have initalizing expression
 		IType expressionType = (IType) expression.visit(this, arg);
@@ -171,12 +185,11 @@ public class TypeCheckVisitor implements ASTVisitor {
 	 */
 	@Override
 	public Object visitILetStatement(ILetStatement n, Object arg) throws Exception {
-		IExpression e=n.getExpression();
-		IType expressionType = (IType) e.visit(this,arg);
-		symtab.enterScope();
-		INameDef nd = n.getLocalDef();
-		IType dec = (IType) nd.visit(this,arg);
-		IType inf = unifyAndCheck(dec,expressionType,n);
+		IType myExpressionType=(IType)n.getExpression().visit(this,arg);
+		symtab.enterScope(); 
+		INameDef nd=n.getLocalDef();
+		IType mydec=(IType) nd.visit(this,arg);
+		IType inf=unifyAndCheck(mydec,myExpressionType,n);
 		nd.setType(inf);
 		n.getBlock().visit(this,arg);
 		symtab.leaveScope();
@@ -263,16 +276,16 @@ public class TypeCheckVisitor implements ASTVisitor {
 	 */
 	@Override
 	public Object visitIReturnStatement(IReturnStatement n, Object arg) throws Exception {
-		IExpression e = n.getExpression();
-		IType nd = (IType) e.visit(this,arg);
-		IType dec = ((IFunctionDeclaration) arg).getResultType();
+		
+		IType dec=((IFunctionDeclaration)arg).getResultType();
+		IType nd=(IType) n.getExpression().visit(this,arg);
 		check(compatibleAssignmentTypes(dec,nd),n,"NOT Compatible");
-		return arg;
+		return arg; 
 	}
 
 	@Override
-	public Object visitIStringLiteralExpression(IStringLiteralExpression n, Object arg) throws Exception {
-		IType type = PrimitiveType__.stringType;
+	public Object visitIStringLiteralExpression(IStringLiteralExpression n,Object arg) throws Exception {
+		IType type = PrimitiveType__.stringType; 
 		n.setType(type);
 		return type;
 	}
@@ -304,13 +317,12 @@ public class TypeCheckVisitor implements ASTVisitor {
 	 */
 	@Override
 	public Object visitISwitchStatement(ISwitchStatement n, Object arg) throws Exception {
-		IExpression switchExpression = n.getSwitchExpression();
-		if (switchExpression.getType().isBoolean()||switchExpression.getType().isInt()||switchExpression.getType().isString()){
+		IExpression mySwitch = n.getSwitchExpression();
+		if (mySwitch.getType().isBoolean()||mySwitch.getType().isInt()||mySwitch.getType().isString()){
 			List<IExpression> branchExpressions = n.getBranchExpressions();
-			List<IBlock> blocks=n.getBlocks();
+			List<IBlock> blocks=n.getBlocks(); 
 			for(int i=0;i<branchExpressions.size();i++){
-
-				check(compatibleAssignmentTypes((IType) branchExpressions.get(i).visit(this,arg),(IType) switchExpression.visit(this,arg))&&isConstantExpression(branchExpressions.get(i)),n,"NOT valid switch statement");
+				check(compatibleAssignmentTypes((IType) branchExpressions.get(i).visit(this,arg),(IType) mySwitch.visit(this,arg))&&isConstantExpression(branchExpressions.get(i)),n,"NOT valid switch statement");
 				blocks.get(i).visit(this,arg);
 			}
 			n.getDefaultBlock().visit(this,arg);
